@@ -224,7 +224,7 @@ void deleteNode(Node* pNode)
     *indirect = pNode->next;
    
 
-    free(current);
+    free(pNode);
     saveIntoFile();
     printf("Account deleted successfully!\n");
     pause();
@@ -268,3 +268,4 @@ int main()
     showMenu();
     return 0;
 }
+
