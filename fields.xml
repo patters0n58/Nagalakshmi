@@ -1,0 +1,8 @@
+<xml>
+	<rootTag>Library</rootTag>
+	<subTag>Book</subTag>
+	<field>bookID</field>
+	<field>name</field>
+	<field>noOfCopies</field>
+</xml>
+
