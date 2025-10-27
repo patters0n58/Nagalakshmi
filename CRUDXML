@@ -1,0 +1,108 @@
+import xml.etree.ElementTree as ET
+import os
+
+FIELDSFILE = "fields.xml"
+DATAFILE = "books.xml"
+MENUFILE = "menu.cfg"
+
+def getFields():
+    global rootTag, subTag, fields
+    tree = ET.parse(FIELDSFILE)
+    root = tree.getroot()
+    rootTag = root.find("rootTag").text.strip()
+    subTag = root.find("subTag").text.strip()
+    fields = [f.text.strip() for f in root.findall("field")]
+
+
+def loadXmlTree():
+    global tree, root
+
+    if not os.path.exists(DATAFILE) or os.stat(DATAFILE).st_size == 0:
+        root = ET.Element(rootTag)
+        tree = ET.ElementTree(root)
+        tree.write(DATAFILE)
+    else:
+        try:
+            tree = ET.parse(DATAFILE)
+            root = tree.getroot()
+
+            if root.tag != rootTag:
+                root = ET.Element(rootTag)
+                tree = ET.ElementTree(root)
+                tree.write(DATAFILE)
+        except ET.ParseError:
+            root = ET.Element(rootTag)
+            tree = ET.ElementTree(root)
+            tree.write(DATAFILE)
+
+
+def saveIntoTree():
+    tree.write(DATAFILE, encoding="utf-8", xml_declaration=True)
+
+def create():
+    record = ET.SubElement(root, subTag)
+    for field in fields:
+        value = input(f"Enter {field}: ")
+        ET.SubElement(record, field).text = value
+    saveIntoTree()
+    print("Record added successfully!\n")
+
+
+def read():
+    if len(root.findall(subTag)) == 0:
+        print("No records found.\n")
+        return
+    for record in root.findall(subTag):
+        for field in fields:
+            node = record.find(field)
+            print(f"{field}: {node.text if node is not None else ''}")
+        print("-" * 20)
+
+
+def findRecordByID():
+    id_field = fields[0]
+    id_value = input(f"Enter {id_field}: ")
+    for record in root.findall(subTag):
+        node = record.find(id_field)
+        if node is not None and node.text == id_value:
+            return record
+    print("Record not found.\n")
+    return None
+
+
+def update():
+    record = findRecordByID()
+    if record is None:
+        return
+    new_value = input(f"{fields[-1]}: ").strip()
+    record.find(fields[-1]).text = new_value
+    saveIntoTree()
+    print("Record updated successfully!\n")
+
+
+def delete():
+    record = findRecordByID()
+    if record is None:
+        return
+    root.remove(record)
+    saveIntoTree()
+    print("Record deleted successfully!\n")
+
+def showMenu():
+    fpMenu = open(MENUFILE, "r")
+    menu = fpMenu.readlines()
+    while True:
+        for line in menu:
+            print(line, end="")
+        choice = int(input())
+        operations = [create, read, update, delete, exit]
+        operations[choice - 1]()
+
+def main():
+    getFields()
+    loadXmlTree()
+    showMenu()
+
+
+main()
+
