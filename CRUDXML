@@ -11,7 +11,7 @@ def getFields():
     root = tree.getroot()
     rootTag = root.find("rootTag").text.strip()
     subTag = root.find("subTag").text.strip()
-    fields = [f.text.strip() for f in root.findall("field")]
+    fields = [field.text.strip() for field in root.findall("field")]
 
 
 def loadXmlTree():
