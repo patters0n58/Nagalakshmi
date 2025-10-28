@@ -1,0 +1,64 @@
+import requests, threading, time
+
+cities = ["London", "Paris", "New York", "Tokyo", "Mumbai", "Berlin", "Moscow", "Beijing", "Sydney", "Toronto", "Rome", "Madrid", "Singapore", "Dubai", "Cairo"]
+
+cityGroup1 = ["London", "Paris", "New York", "Tokyo", "Mumbai"]
+cityGroup2 = ["Berlin", "Moscow", "Beijing", "Sydney", "Toronto"]
+cityGroup3 = ["Rome", "Madrid", "Singapore", "Dubai", "Cairo"]
+
+def getWeather(city):
+		weatherData = requests.get(f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid=1f67cd4aa973dd153bbc2474c904ab3f&units=metric")
+		data = weatherData.json()
+		temp = data["main"]["temp"]
+		#print(f"Temperature of {city} is: {temp}")
+		
+start = time.perf_counter()
+for city in cities:
+	getWeather(city)
+end = time.perf_counter()
+print(f"\nTime took for {len(cities)} cities is ({len(cities)}  ): {end - start:.2f}s")
+
+threads = []
+start = time.perf_counter()
+for city in cities:
+	t = threading.Thread(target=getWeather, args = (city, ) )
+	threads.append(t)
+	t.start()
+for t in threads:
+    t.join()
+end = time.perf_counter()
+print(f"Time taken by multithreading : {end - start:.2f}s")
+
+threadsGroup1 = []
+start = time.perf_counter()
+for city in cityGroup1:
+	t = threading.Thread(target=getWeather, args = (city, ) )
+	threadsGroup1.append(t)
+	t.start()
+for t in threadsGroup1:
+    t.join()
+end = time.perf_counter()
+print(f"Time taken by multithreading  for cityGroup1: {end - start:.2f}s")
+
+threadsGroup2 = []
+start = time.perf_counter()
+for city in cityGroup2:
+	t = threading.Thread(target=getWeather, args = (city, ) )
+	threadsGroup2.append(t)
+	t.start()
+for t in threadsGroup2:
+    t.join()
+end = time.perf_counter()
+print(f"Time taken by multithreading  for cityGroup2: {end - start:.2f}s")
+
+threadsGroup3 = []
+start = time.perf_counter()
+for city in cityGroup3:
+	t = threading.Thread(target=getWeather, args = (city, ) )
+	threadsGroup3.append(t)
+	t.start()
+for t in threadsGroup3:
+    t.join()
+end = time.perf_counter()
+print(f"Time taken by multithreading  for cityGroup3: {end - start:.2f}s")
+
