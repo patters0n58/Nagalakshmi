@@ -1,0 +1,67 @@
+import requests, threading, time, math
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from citynames import cities
+
+def get_weather(cityGroup):
+    if isinstance(cityGroup, str): 
+        cityGroup = [cityGroup]
+
+    for city in cityGroup:
+        try:
+            weatherData = requests.get(
+                f"https://api.openweathermap.org/data/2.5/weather",
+                params={"q": city, "appid": "1f67cd4aa973dd153bbc2474c904ab3f", "units": "metric"},
+                timeout=5
+            )
+            data = weatherData.json()
+            temp = data["main"]["temp"]
+            #print(f"{city}: {temp}°C")
+        except Exception as e:
+            print(f"{city}: ERROR - {e}")
+
+n = 20
+cityGroups = [cities[i:i + n] for i in range(0, len(cities), n)]
+print(f"Total groups: {len(cityGroups)} | {n} cities per group")
+
+
+k = min(n, max(2, round(1.5 * math.sqrt(n))))
+print(f"Using {k} threads for each group.\n")
+
+threads = []
+start = time.perf_counter()
+
+for group in cityGroups:
+    t = threading.Thread(target=get_weather, args=(group,))
+    threads.append(t)
+    t.start()
+
+for t in threads:
+    t.join()
+
+end = time.perf_counter()
+print(f"\nTime taken by multithreading in {len(cityGroups)} groups of {n} cities each: {end - start:.2f}s")
+
+start = time.perf_counter()
+for city in cities:
+	
+    get_weather(city)
+end = time.perf_counter()
+print(f"\nTime took for {len(cities)} cities is(without threads): {end - start:.2f}s")
+
+threads = []
+start = time.perf_counter()
+for city in cities:
+	t = threading.Thread(target=get_weather, args = (city, ) )
+	threads.append(t)
+	t.start()
+for t in threads:
+    t.join()
+end = time.perf_counter()
+print(f"Time taken by multithreading ( by {len(cities)} threads: {end - start:.2f}s")
+
+for n in [1, 5, 10, 15, 20, 25]:
+    start = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=n) as executor:
+        executor.map(lambda city: get_weather(city), cities)
+    end = time.perf_counter()
+    print(f"\nMultithreading time for {n} threads: {end - start:.2f}s")
