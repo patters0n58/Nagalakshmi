@@ -1,0 +1,58 @@
+import requests, threading
+from citynames import cities, get_weather
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time, math
+
+
+def main():
+    start = time.perf_counter()
+    with requests.Session() as session:
+        for city in cities:
+            city, temp = get_weather(session, city)
+            #print(f"{city:10s} → {temp}")
+    end = time.perf_counter()
+    print(f"\nSequential time: {end - start:.2f}s")
+
+    start = time.perf_counter()
+    with requests.Session() as session:
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {executor.submit(get_weather, session, city): city for city in cities}
+            for future in as_completed(futures):
+                city, temp = future.result()
+                #print(f"{city:10s} → {temp}")
+    end = time.perf_counter()
+    print(f"\nMultithreading time: {end - start:.2f}s")
+
+    n = 20
+    cityGroups = [cities[i:i + n] for i in range(0, len(cities), n)]
+    print(f"Total groups: {len(cityGroups)} | {n} cities per group")
+
+
+    k = min(n, max(2, round(1.5 * math.sqrt(n))))
+    print(f"Using {k} threads for each group.\n")
+
+    threads = []
+    start = time.perf_counter()
+    with requests.Session() as session:
+        for group in cityGroups:
+            t = threading.Thread(target=get_weather, args=(session, group))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        while threading.active_count() > k + 5:  
+            time.sleep(0.02)
+        end = time.perf_counter()
+        print(f"\nTime taken by multithreading in {len(cityGroups)} groups of {n} cities each: {end - start:.2f}s")
+
+    for n in [1, 5, 10, 15, 20, 25]:
+        start = time.perf_counter()
+        with requests.Session() as session:
+            with ThreadPoolExecutor(max_workers=n) as executor:
+                executor.map(lambda city: get_weather(session, city), cities)
+        end = time.perf_counter()
+        print(f"{n:2d} threads → {end - start:.2f}s")
+
+main()
