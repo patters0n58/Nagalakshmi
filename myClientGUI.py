@@ -6,7 +6,7 @@ from tkinter import messagebox, simpledialog
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-SERVER_IP = "127.0.0.1"  # or use your LAN IP like "192.168.1.10"
+SERVER_IP = "127.0.0.1"  
 SERVER_PORT = 9999
 
 try:
@@ -57,7 +57,7 @@ tk.Label(root, text="WeChat Client", font=("Segoe UI", 16, "bold"), fg="#00FFAA"
 chat_box = tk.Text(root, height=15, width=70, font=("Consolas", 10), bg="#2B2B2B", fg="white", wrap="word")
 chat_box.pack(pady=10)
 
-# Frame for entry + button
+
 frame = tk.Frame(root, bg="#1E1E1E")
 frame.pack(pady=5)
 
@@ -79,7 +79,7 @@ send_button = tk.Button(
 )
 send_button.grid(row=0, column=1)
 
-# Start background thread for receiving
+
 threading.Thread(target=receive_messages, daemon=True).start()
 
 root.mainloop()
