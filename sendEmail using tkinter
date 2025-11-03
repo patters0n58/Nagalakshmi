@@ -1,0 +1,145 @@
+#send email using tkinter
+import tkinter as tkfrom tkinter import messagebox
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+
+def send_message():
+    try:
+        receiver_email = entry_receiver_email.get().strip()
+        subject = entry_subject.get().strip()
+        body = text_box.get("1.0", tk.END).strip()
+
+        if not receiver_email or not subject or not body:
+            messagebox.showwarning("Missing Info", "Please fill out all fields.")
+            return
+
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = receiver_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
+
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender_email, password)
+            server.send_message(msg)
+            messagebox.showinfo("Success", " Email sent successfully!")
+            new_root.destroy()
+    except Exception as e:
+        messagebox.showerror("Error", f" Failed to send email.\n\n{e}")
+
+
+def compose():
+    global new_root, entry_receiver_email, entry_subject, text_box
+    new_root = tk.Tk()
+    new_root.title("Compose Email")
+    new_root.geometry("750x500")
+    new_root.configure(bg="#1E1E1E")
+
+    # Header
+    tk.Label(
+        new_root,
+        text=" Compose New Email",
+        font=("Segoe UI", 18, "bold"),
+        fg="#00FFAA",
+        bg="#1E1E1E"
+    ).pack(pady=15)
+
+    
+    top_frame = tk.Frame(new_root, bg="#1E1E1E")
+    top_frame.pack(pady=10)
+
+    
+    tk.Label(top_frame, text="To:", font=("Segoe UI", 11), fg="white", bg="#1E1E1E").grid(row=0, column=0, padx=(10, 5))
+    entry_receiver_email = tk.Entry(top_frame, width=45, font=("Segoe UI", 11))
+    entry_receiver_email.grid(row=0, column=1, padx=(0, 25))  # extra gap before Subject
+
+    
+    tk.Label(top_frame, text="Subject:", font=("Segoe UI", 11), fg="white", bg="#1E1E1E").grid(row=1, column=0, padx=(10, 5))
+    entry_subject = tk.Entry(top_frame, width=45, font=("Segoe UI", 11))
+    entry_subject.grid(row=1, column=1, padx=(0, 10))
+
+    
+    tk.Label(new_root, text="Message:", font=("Segoe UI", 11), fg="white", bg="#1E1E1E").pack(pady=5)
+    text_box = tk.Text(
+        new_root,
+        height=12,
+        width=85,
+        font=("Consolas", 11),
+        bg="#2B2B2B",
+        fg="white",
+        insertbackground="white",
+        relief="solid",
+        bd=1
+    )
+    text_box.pack(pady=10)
+
+    
+    tk.Button(
+        new_root,
+        text=" Send Email",
+        font=("Segoe UI", 12, "bold"),
+        bg="#00FFAA",
+        fg="#1E1E1E",
+        activebackground="#00CC88",
+        activeforeground="white",
+        width=20,
+        command=send_message
+    ).pack(pady=20)
+
+    new_root.mainloop()
+
+
+def login_email():
+    global sender_email, password
+    sender_email = entry_sender_email.get().strip()
+    password = entry_password.get().strip()
+
+    if not sender_email or not password:
+        messagebox.showwarning("Login Failed", "Please enter both email and app password.")
+        return
+
+    messagebox.showinfo("Login Successful", f"Welcome {sender_email}!")
+    root.destroy()
+    compose()
+
+
+
+root = tk.Tk()
+root.title("Gmail Login")
+root.geometry("400x350")
+root.configure(bg="#1E1E1E")
+
+tk.Label(root, text="🔐 Gmail Login", font=("Segoe UI", 18, "bold"), fg="#00FFAA", bg="#1E1E1E").pack(pady=20)
+
+tk.Label(root, text="Email Address:", font=("Segoe UI", 11), fg="white", bg="#1E1E1E").pack()
+entry_sender_email = tk.Entry(root, width=35, font=("Segoe UI", 11))
+entry_sender_email.pack(pady=8)
+
+tk.Label(root, text="App Password:", font=("Segoe UI", 11), fg="white", bg="#1E1E1E").pack()
+entry_password = tk.Entry(root, width=35, show="*", font=("Segoe UI", 11))
+entry_password.pack(pady=8)
+
+tk.Button(
+    root,
+    text="Login",
+    font=("Segoe UI", 12, "bold"),
+    bg="#00FFAA",
+    fg="#1E1E1E",
+    activebackground="#00CC88",
+    activeforeground="white",
+    width=15,
+    command=login_email
+).pack(pady=20)
+
+tk.Label(
+    root,
+    text="Use your Gmail App Password (not normal password).",
+    font=("Segoe UI", 9),
+    fg="gray",
+    bg="#1E1E1E"
+).pack(pady=10)
+
+root.mainloop()
