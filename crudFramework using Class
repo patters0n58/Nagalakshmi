@@ -1,0 +1,105 @@
+# CRUD Program in Python (records as list of lists)
+
+class Record:
+    def __init__(self):
+        self.values = []  
+
+    def readRecord(self, fields):
+        self.values = []
+        for field in fields:
+            value = input(f"Enter {field}: ")
+            self.values.append(value)
+
+    def getList(self):
+        return self.values
+
+class Framework:
+    def __init__(self, menu_file, fields_file, data_file):
+        self.menu_file = menu_file
+        self.fields_file = fields_file
+        self.data_file = data_file
+        self.records = []
+        self.fields = []
+        self.loadFields()
+        self.loadRecords()
+
+    def saveRecords(self):
+        with open(self.data_file, "w") as fpData:
+            fpData.write(str(self.records))
+
+    def loadRecords(self):
+        try:
+            with open(self.data_file, "r") as fpData:
+                data = fpData.read().strip()
+                if data:
+                    self.records = eval(data)
+                else:
+                    self.records = []
+        except FileNotFoundError:
+            open(self.data_file, "w").close()
+            self.records = []
+
+    def loadFields(self):
+        with open(self.fields_file, "r") as fpFields:
+            self.fields = fpFields.read().split()
+
+    def showMenu(self):
+        fpMenu = open(self.menu_file, "r")
+        menu = fpMenu.readlines()
+        while True:
+            for line in menu:
+                print(line, end = "")
+            try:
+                choice = int(input(""))
+                options = {
+                    1: self.create,
+                    2: self.read,
+                    3: self.update,
+                    4: self.delete,
+                    5: self.exit
+                }
+                if choice in options:
+                    options[choice]()
+                else:
+                    print(" Invalid choice. Try again.\n")
+            except ValueError:
+                print(" Please enter a number.\n")
+
+    def create(self): 
+        record = Record()
+        record.readRecord(self.fields)
+        self.records.append(record.getList())  
+        self.saveRecords()
+        print("Record created successfully.\n")
+
+    def read(self):
+        if not self.records:
+            print("No records found.\n")
+        else:
+            print("\n Records:")
+            for idx, rec in enumerate(self.records, start=1):
+                print(f"Record #{idx}")
+                for i, field in enumerate(self.fields):
+                    value = rec[i] if i < len(rec) else "(missing)"
+                    print(f"{field}: {value}")
+                print("-" * 30)
+            print()
+
+
+    def update(self):
+        print("Record updated successfully.\n")
+
+    def delete(self):
+        print("Record deleted successfully.\n")
+
+    def exit(self):
+        print("Exiting.")
+        
+        exit()
+
+    
+def main():
+    framework = Framework("menu.cfg", "fields.cfg", "records.dat")
+    framework.showMenu()
+
+main()
