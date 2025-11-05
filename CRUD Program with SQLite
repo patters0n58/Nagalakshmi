@@ -1,3 +1,5 @@
+#CRUD Program with SQLite instead of datafile
+
 import sqlite3
 
 class Record:
@@ -18,10 +20,8 @@ class Framework:
         self.menu_file = menu_file
         self.db_file = db_file
         self.table_name = table_name  
-
         self.conn = sqlite3.connect(self.db_file)
         self.cursor = self.conn.cursor()
-
         self.fields = self.loadfields()
 
     def loadfields(self):
@@ -97,7 +97,6 @@ class Framework:
             record_id = self.getMatchedRecord("update")
             last_field = self.fields[-1] 
             new_value = input(f"Enter new {last_field}: ")
-
             sql = f'UPDATE {self.table_name} SET "{last_field}" = ? WHERE id = ?'
             self.cursor.execute(sql, (new_value, record_id))
             self.conn.commit()
@@ -114,11 +113,9 @@ class Framework:
         except sqlite3.Error as e:
             print(f"Database error: {e}\n")
 
-
     def exit(self):
         print("Exiting.")
         exit()
-
 
 def main():
     framework = Framework("menu.cfg", "records.db", "records")
