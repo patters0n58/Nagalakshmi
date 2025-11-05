@@ -26,11 +26,10 @@ class Framework:
 
     def loadfields(self):
         self.cursor.execute(f"PRAGMA table_info({self.table_name})")
-        columns = [row[1] for row in self.cursor.fetchall()]
-        # remove 'id' if it's the primary key
-        if "id" in columns:
-            columns.remove("id")
-        return columns
+        fields = [row[1] for row in self.cursor.fetchall()]
+        if "id" in fields:
+            fields.remove("id")
+        return fields
 
     def showMenu(self):
         with open(self.menu_file, "r") as fpMenu:
