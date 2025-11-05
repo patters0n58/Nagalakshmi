@@ -73,8 +73,8 @@ class Framework:
             all_fields = ["id"] + self.fields
             for index, row in enumerate(rows, start=1):
                 print(f"Record #{index}")
-                for i, field in enumerate(all_fields):
-                    print(f"  {field}: {row[i]}")
+                for fieldindex, field in enumerate(all_fields):
+                    print(f"  {field}: {row[fieldindex]}")
                 print("-" * 30)
             print()
 
