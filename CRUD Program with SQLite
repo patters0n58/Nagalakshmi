@@ -84,17 +84,17 @@ class Framework:
             self.cursor.execute(f"SELECT * FROM {self.table_name} WHERE id = ?", (id_val,))
             record = self.cursor.fetchone()
             if record:
-                return id_val, record
+                return id_val
             else:
                 print(f"No record found with ID {id_val}.\n")
-                return None, None
+                return None
         except ValueError:
             print("Invalid input. Please enter a numeric ID.\n")
-            return None, None
+            return None
 
     def update(self):
         try:
-            record_id, record = self.getMatchedRecord("update")
+            record_id = self.getMatchedRecord("update")
             last_field = self.fields[-1] 
             new_value = input(f"Enter new {last_field}: ")
 
@@ -107,7 +107,7 @@ class Framework:
 
     def delete(self):
         try:
-            record_id, record = self.getMatchedRecord("delete")
+            record_id = self.getMatchedRecord("delete")
             self.cursor.execute(f"DELETE FROM {self.table_name} WHERE id = ?", (record_id,))
             self.conn.commit()
             print("Record deleted successfully!\n")
