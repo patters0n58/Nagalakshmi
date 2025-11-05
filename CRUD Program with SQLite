@@ -101,7 +101,7 @@ class Framework:
             sql = f'UPDATE {self.table_name} SET "{last_field}" = ? WHERE id = ?'
             self.cursor.execute(sql, (new_value, record_id))
             self.conn.commit()
-            print(" Student updated successfully!\n")
+            print(" Record updated successfully!\n")
         except sqlite3.Error as e:
             print(f"Database error: {e}\n")
 
@@ -110,7 +110,7 @@ class Framework:
             record_id, record = self.getMatchedRecord("delete")
             self.cursor.execute(f"DELETE FROM {self.table_name} WHERE id = ?", (record_id,))
             self.conn.commit()
-            print("Student deleted successfully!\n")
+            print("Record deleted successfully!\n")
         except sqlite3.Error as e:
             print(f"Database error: {e}\n")
 
@@ -121,7 +121,7 @@ class Framework:
 
 
 def main():
-    framework = Framework("menu.cfg", "records.db", "bloodgroups")
+    framework = Framework("menu.cfg", "records.db", "records")
     framework.showMenu()
 
 main()
