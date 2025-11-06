@@ -1,0 +1,144 @@
+#use sqlite3
+#import sqlite3
+
+#using mysql instead of sqlite
+import mysql.connector
+
+class Record:
+    def __init__(self):
+        self.values = []  
+
+    def readRecord(self, fields):
+        self.values = []
+        for field in fields:
+            value = input(f"Enter {field}: ")
+            self.values.append(value)
+
+    def getList(self):
+        return self.values
+
+class Framework:
+    def __init__(self, menu_file, host, user, password, database, table_name):
+        self.menu_file = menu_file
+        self.table_name = table_name 
+        #self.db_file = db_file
+
+        self.conn = mysql.connector.connect(
+            host=host,
+            user=user,
+            password=password,
+            database=database
+        )
+         
+
+        #self.conn = sqlite3.connect(self.db_file)
+        #self.cursor = self.conn.cursor()
+
+        self.cursor = self.conn.cursor()
+        self.fields = self.loadfields()
+
+    def loadfields(self):
+        self.cursor.execute(f"DESCRIBE {self.table_name}")
+        structure = self.cursor.fetchall()
+        fields = [row[0] for row in structure]
+        # Detect primary key field
+        pk_field = next((row[0] for row in structure if row[3] == "PRI"), None)
+        self.pk_field = pk_field  # store for later use
+        return fields
+
+
+    def showMenu(self):
+        with open(self.menu_file, "r") as fpMenu:
+            menu = fpMenu.readlines()
+        while True:
+            for line in menu:
+                print(line, end="")
+            try:
+                choice = int(input(""))
+                options = {
+                    1: self.create,
+                    2: self.read,
+                    3: self.update,
+                    4: self.delete,
+                    5: self.exit
+                }
+                if choice in options:
+                    options[choice]()
+                else:
+                    print("Invalid choice.\n")
+            except ValueError:
+                print("Please enter a number.\n")
+
+    def create(self): 
+        record = Record()
+        record.readRecord(self.fields)
+        placeholders = ", ".join(["%s"] * len(self.fields))
+        columns = ", ".join(self.fields)
+        sql = f'INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})'
+        self.cursor.execute(sql, record.getList())
+        self.conn.commit()
+        print(" Record created successfully.\n")
+
+    def read(self):
+        self.cursor.execute(f"SELECT * FROM {self.table_name}")
+        rows = self.cursor.fetchall()
+        if not rows:
+            print("No records found.\n")
+        else:
+            print("\nRecords:")
+            all_fields = [i[0] for i in self.cursor.description]
+            for index, row in enumerate(rows, start=1):
+                print(f"\nRecord #{index}")
+                for field, value in zip(all_fields, row):
+                    print(f"  {field}: {value}")
+                print("-" * 30)
+
+
+    def getMatchedRecord(self, operation):
+        id_val = input(f"Enter ID for the record to {operation}: ")
+        sql = f"SELECT * FROM {self.table_name} WHERE {self.pk_field} = %s"
+        self.cursor.execute(sql, (id_val, ))
+        record = self.cursor.fetchone()
+        if record:
+            return id_val
+        else:
+            print(f"No record found with ID {id_val}.\n")
+            return None
+
+    def update(self):
+        record_id = self.getMatchedRecord("update")
+        if record_id:
+            last_field = self.fields[-1]
+            new_value = input(f"Enter new {last_field}: ")
+            sql = f'UPDATE {self.table_name} SET {last_field} = %s WHERE {self.pk_field} = %s'
+            self.cursor.execute(sql, (new_value, record_id))
+            self.conn.commit()
+            print(" Record updated successfully!\n")
+
+    def delete(self):
+        record_id = self.getMatchedRecord("delete")
+        if record_id:
+            sql = f"DELETE FROM {self.table_name} WHERE {self.pk_field} = %s"
+            self.cursor.execute(sql, (record_id,))
+            self.conn.commit()
+            print(" Record deleted successfully.\n")
+
+    def exit(self):
+        print(" Exiting.")
+        self.conn.close()
+        exit()
+
+
+def main():
+    framework = Framework(
+        menu_file="menu.cfg",
+        host="138.68.140.83",
+        user="Nlakshmi",
+        password="Nlakshmi@123",
+        database="dbNlakshmi_Dmart",
+        table_name="Customer"
+    )
+    framework.showMenu()
+
+
+main()
