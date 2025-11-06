@@ -1,0 +1,92 @@
+1. Using WHERE 
+ SELECT bd.BillNumber, bh.BillDate, i.ItemID, i.Description, bd.SoldQty, i.UnitPrice, (bd.SoldQty * i.UnitPrice) AS TotalQty FROM Item i, BillDetail bd, BillHeader bh WHERE i.ItemID = bd.ItemID AND bh.BillNumber = bd.BillNumber;
+2. Using JOIN
+select bd.BillNumber, bh.BillDate, i.ItemID, i.Description, bd.SoldQty, i.UnitPrice, (bd.SoldQty * i.UnitPrice) AS TotalQty from ((Item i INNER JOIN BillDetail bd  on i.ItemID = bd.ItemID) INNER JOIN BillHeader bh on bh.BillNumber = bd.BillNumber);
+3.Using SubQuery
+SELECT bd.BillNumber, (SELECT bh.BillDate FROM BillHeader bh WHERE bh.BillNumber = bd.BillNumber) AS BillDate (SELECT i.ItemID FROM Item i WHERE i.ItemID = bd.ItemID) AS ItemID, (SELECT i.Description FROM Item i WHERE i.ItemID = bd.ItemID) AS Description, bd.SoldQty, (SELECT i.UnitPrice FROM Item i WHERE i.ItemID = bd.ItemID) AS UnitPrice, (bd.SoldQty * (SELECT i.UnitPrice FROM Item i WHERE i.ItemID = bd.ItemID)) AS TotalQty FROM BillDetail bd;
+4. Using Function
+DELIMITER $$
+mysql>
+mysql> CREATE FUNCTION fn_GetBillDetails_JSON(p_BillNumber VARCHAR(10))
+    -> RETURNS JSON
+    -> DETERMINISTIC
+    -> BEGIN
+    ->     RETURN (
+    ->       SELECT JSON_ARRAYAGG(
+    ->                JSON_OBJECT(
+    ->                  'BillNumber', bd.BillNumber,
+    ->                  'BillDate', DATE_FORMAT(bh.BillDate, '%Y-%m-%d'),
+    ->                  'ItemID', i.ItemID,
+    ->                  'Description', i.Description,
+    ->                  'SoldQty', bd.SoldQty,
+    ->                  'UnitPrice', i.UnitPrice,
+    ->                  'TotalQty', bd.SoldQty * i.UnitPrice
+    ->                )
+    ->              )
+    ->       FROM BillDetail bd
+    ->       JOIN Item i ON i.ItemID = bd.ItemID
+    ->       JOIN BillHeader bh ON bh.BillNumber = bd.BillNumber
+    ->       WHERE bd.BillNumber = p_BillNumber
+    ->     );
+    -> END$$
+DELIMITER ;
+mysql> SELECT fn_GetBillDetails_JSON('B032');
++-------------------------------------------------------------------------------------------------------------------------------------------------+
+| fn_GetBillDetails_JSON('B032')                                                                                                                  |
++-------------------------------------------------------------------------------------------------------------------------------------------------+
+| [{"ItemID": "I4140", "SoldQty": 2, "BillDate": "2022-12-14", "TotalQty": 400, "UnitPrice": 200, "BillNumber": "B032", "Description": "Bottle"}] |
++-------------------------------------------------------------------------------------------------------------------------------------------------+
+5. Using Stored Procedure
+DELIMITER $$
+mysql>
+mysql> CREATE PROCEDURE GetBillDetails()
+    -> BEGIN
+    ->     SELECT
+    ->         bd.BillNumber,
+    ->         bh.BillDate,
+    ->         i.ItemID,
+    ->         i.Description,
+    ->         bd.SoldQty,
+    ->         i.UnitPrice,
+    ->         (bd.SoldQty * i.UnitPrice) AS TotalQty
+    ->     FROM
+    ->         Item i
+    ->         INNER JOIN BillDetail bd ON i.ItemID = bd.ItemID
+    ->         INNER JOIN BillHeader bh ON bh.BillNumber = bd.BillNumber;
+    -> END$$
+mysql> DELIMITER ;
+mysql> CALL GetBillDetails();
++------------+------------+--------+-------------+---------+-----------+----------+
+| BillNumber | BillDate   | ItemID | Description | SoldQty | UnitPrice | TotalQty |
++------------+------------+--------+-------------+---------+-----------+----------+
+| B032       | 2022-12-14 | I4140  | Bottle      |       2 |       200 |      400 |
+| B144       | 2024-05-04 | I0019  | Book        |      15 |        90 |     1350 |
+| B144       | 2024-05-04 | I3103  | Pen         |      20 |        10 |      200 |
+| B245       | 2025-11-03 | I7309  | Perfume     |       4 |        50 |      200 |
+| B310       | 2021-01-31 | I3103  | Pen         |      15 |        10 |      150 |
+| B310       | 2021-01-31 | I5234  | Bag         |       1 |      1000 |     1000 |
+| B534       | 2023-05-31 | I684   | Plate       |       5 |       120 |      600 |
+| B756       | 2025-11-10 | I0413  | Purse       |       1 |       700 |      700 |
+| B833       | 2025-11-10 | I4140  | Bottle      |       5 |       200 |     1000 |
+| B922       | 2024-09-11 | I0901  | SweetBox    |       3 |       210 |      630 |
++------------+------------+--------+-------------+---------+-----------+----------+
+
+6. Using View
+CREATE VIEW vw_BillDetails SELECT bd.BillNumber, bh.BillDate, i.ItemID, i.Description, bd.SoldQty, i.UnitPrice, (bd.SoldQty * i.UnitPrice) AS TotalQty FROM Item i INNER JOIN BillDetail bd ON i.ItemID = bd.ItemID INNER JOIN BillHeader bh ON bh.BillNumber = bd.BillNumber;
+
++------------+------------+--------+-------------+---------+-----------+----------+
+| BillNumber | BillDate   | ItemID | Description | SoldQty | UnitPrice | TotalQty |
++------------+------------+--------+-------------+---------+-----------+----------+
+| B032       | 2022-12-14 | I4140  | Bottle      |       2 |       200 |      400 |
+| B144       | 2024-05-04 | I0019  | Book        |      15 |        90 |     1350 |
+| B144       | 2024-05-04 | I3103  | Pen         |      20 |        10 |      200 |
+| B245       | 2025-11-03 | I7309  | Perfume     |       4 |        50 |      200 |
+| B310       | 2021-01-31 | I3103  | Pen         |      15 |        10 |      150 |
+| B310       | 2021-01-31 | I5234  | Bag         |       1 |      1000 |     1000 |
+| B534       | 2023-05-31 | I684   | Plate       |       5 |       120 |      600 |
+| B756       | 2025-11-10 | I0413  | Purse       |       1 |       700 |      700 |
+| B833       | 2025-11-10 | I4140  | Bottle      |       5 |       200 |     1000 |
+| B922       | 2024-09-11 | I0901  | SweetBox    |       3 |       210 |      630 |
++------------+------------+--------+-------------+---------+-----------+----------+
+mysql> SELECT * FROM vw_BillDetails;
+
