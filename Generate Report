@@ -3,7 +3,7 @@
 2. Using JOIN
 select bd.BillNumber, bh.BillDate, i.ItemID, i.Description, bd.SoldQty, i.UnitPrice, (bd.SoldQty * i.UnitPrice) AS TotalQty from ((Item i INNER JOIN BillDetail bd  on i.ItemID = bd.ItemID) INNER JOIN BillHeader bh on bh.BillNumber = bd.BillNumber);
 3.Using SubQuery
-SELECT bd.BillNumber, (SELECT bh.BillDate FROM BillHeader bh WHERE bh.BillNumber = bd.BillNumber) AS BillDate (SELECT i.ItemID FROM Item i WHERE i.ItemID = bd.ItemID) AS ItemID, (SELECT i.Description FROM Item i WHERE i.ItemID = bd.ItemID) AS Description, bd.SoldQty, (SELECT i.UnitPrice FROM Item i WHERE i.ItemID = bd.ItemID) AS UnitPrice, (bd.SoldQty * (SELECT i.UnitPrice FROM Item i WHERE i.ItemID = bd.ItemID)) AS TotalQty FROM BillDetail bd;
+SELECT bd.BillNumber, (SELECT bh.BillDate FROM BillHeader bh WHERE bh.BillNumber = bd.BillNumber) AS BillDate, (SELECT i.ItemID FROM Item i WHERE i.ItemID = bd.ItemID) AS ItemID, (SELECT i.Description FROM Item i WHERE i.ItemID = bd.ItemID) AS Description, bd.SoldQty, (SELECT i.UnitPrice FROM Item i WHERE i.ItemID = bd.ItemID) AS UnitPrice, (bd.SoldQty * (SELECT i.UnitPrice FROM Item i WHERE i.ItemID = bd.ItemID)) AS TotalQty FROM BillDetail bd;
 4. Using Function
 DELIMITER $$
 mysql>
