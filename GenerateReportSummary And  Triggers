@@ -111,32 +111,3 @@ Query OK, 1 row affected (0.1977 sec)
   > INSERT INTO BillDetail VALUES ('B467', 'I0901', 22);
 ERROR: 1644 (45000): Error: Not enough stock available for this sale!
 
-CREATE TABLE Item_AuditLog (
-                                                     ->     LogID INT AUTO_INCREMENT PRIMARY KEY,
-                                                     ->     ItemID VARCHAR(10),
-                                                     ->     OldPrice DECIMAL(10,2),
-                                                     ->     NewPrice DECIMAL(10,2),
-                                                     ->     OldStock INT,
-                                                     ->     NewStock INT,
-                                                     ->     ChangedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                                     -> );
-  SQL > DELIMITER $$
-   SQL > CREATE TRIGGER trg_ItemUpdateLog
-                                                     -> AFTER UPDATE ON Item
-                                                     -> FOR EACH ROW
-                                                     -> BEGIN
-                                                     ->     INSERT INTO Item_AuditLog (ItemID, OldPrice, NewPrice, OldStock, NewStock)
-                                                     ->     VALUES (OLD.ItemID, OLD.UnitPrice, NEW.UnitPrice, OLD.StockQty, NEW.StockQty);
-                                                     -> END$$
- SQL > DELIMITER ;
-  SQL > UPDATE Item SET UnitPrice = UnitPrice + 5 WHERE ItemID = 'I3103';
-
-Rows matched: 1  Changed: 1  Warnings: 0
-  SQL > SELECT * FROM Item_AuditLog ORDER BY ChangedAt DESC;
-+-------+--------+----------+----------+----------+----------+---------------------+
-| LogID | ItemID | OldPrice | NewPrice | OldStock | NewStock | ChangedAt           |
-+-------+--------+----------+----------+----------+----------+---------------------+
-|     1 | I3103  |    10.00 |    15.00 |      230 |      230 | 2025-11-09 16:52:59 |
-+-------+--------+----------+----------+----------+----------+---------------------+
-1 row in set (0.2076 sec)
- 
