@@ -1,0 +1,142 @@
+DELIMITER $$
+> CREATE PROCEDURE GenerateReportSummary()
+                                                     -> BEGIN
+                                                     ->     DECLARE v_totalItems INT;
+                                                     ->     DECLARE v_avgItems DECIMAL(10,2);
+                                                     ->     DECLARE v_totalUnits INT;
+                                                     ->     DECLARE v_totalSales DECIMAL(18,2);
+                                                     ->     DECLARE v_minPrice DECIMAL(18,2);
+                                                     ->     DECLARE v_maxPrice DECIMAL(18,2);
+                                                     ->     DECLARE v_supplierCount INT;
+                                                     ->     DECLARE v_mostSold VARCHAR(1000);
+                                                     ->     DECLARE v_leastSold VARCHAR(1000);
+                                                     ->
+                                                     ->     SET v_totalItems = itemCount();
+                                                     ->     SET v_totalUnits = totalUnitsSold();
+                                                     ->     SET v_totalSales = totalSales();
+                                                     ->     SET v_supplierCount = supplierCount();
+                                                     ->     SET v_avgItems = ROUND(AvgItemsSold(), 2);
+                                                     ->
+                                                     ->     -- Price range
+                                                     ->     SELECT IFNULL(MIN(UnitPrice),0), IFNULL(MAX(UnitPrice),0)
+                                                     ->     INTO v_minPrice, v_maxPrice
+                                                     ->     FROM Item;
+                                                     ->
+                                                     ->     -- Most sold items (top 5) — note: outer query must reference subquery column name
+                                                     ->     SELECT GROUP_CONCAT(t.Description SEPARATOR ', ')
+                                                     ->     INTO v_mostSold
+                                                     ->     FROM (
+                                                     ->         SELECT i.Description
+                                                     ->         FROM BillDetail bd
+                                                     ->         INNER JOIN Item i ON bd.ItemID = i.ItemID
+                                                     ->         GROUP BY i.Description
+                                                     ->         ORDER BY SUM(bd.SoldQty) DESC
+                                                     ->         LIMIT 5
+                                                     ->     ) AS t;
+                                                     ->
+                                                     ->     -- Least sold items (bottom 3)
+                                                     ->     SELECT GROUP_CONCAT(t2.Description SEPARATOR ', ')
+                                                     ->     INTO v_leastSold
+                                                     ->     FROM (
+                                                     ->         SELECT i.Description
+                                                     ->         FROM BillDetail bd
+                                                     ->         INNER JOIN Item i ON bd.ItemID = i.ItemID
+                                                     ->         GROUP BY i.Description
+                                                     ->         ORDER BY SUM(bd.SoldQty) ASC
+                                                     ->         LIMIT 3
+                                                     ->     ) AS t2;
+                                                     ->
+                                                     ->     -- Final report output
+                                                     ->     SELECT CONCAT(
+                                                     ->         'A Business Report: ',
+                                                     ->         '\n',
+                                                     ->         'In our Nagalakshmi Dmart, we are dealing with ', v_totalItems, ' items. ',
+                                                     ->         'Out of which we are selling an average of ', v_avgItems, ' items per day. ',
+                                                     ->         'The most frequently sold items are ', IFNULL(v_mostSold,'(none)'), '. ',
+                                                     ->         'The non-moving items are ', IFNULL(v_leastSold,'(none)'), ', ',
+                                                     ->         'which are lying in stock for a long period and have not yet been sold regularly. ',
+                                                     ->         'In our store, the cost of items ranges from Rs ', v_minPrice, ' to Rs ', v_maxPrice, '. ',
+                                                     ->         'We are purchasing the items from ', v_supplierCount, ' suppliers. ',
+                                                     ->         'Till today, we have sold up to ', v_totalUnits, ' units of items, ',
+                                                     ->         'and we have reached Rs. ', v_totalSales, ' in sales to date.'
+                                                     ->     ) AS Business_Report;
+                                                     -> END$$
+SQL > DELIMITER ;
+ SQL > call GenerateReportSummary();
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Business_Report                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| A Business Report:
+In our Nagalakshmi Dmart, we are dealing with 10 items. Out of which we are selling an average of 7.10 items per day. The most frequently sold items are Pen, Book, Bottle, Plate, Perfume. The non-moving items are Purse, Bag, SweetBox, which are lying in stock for a long period and have not yet been sold regularly. In our store, the cost of items ranges from Rs 10.00 to Rs 1000.00. We are purchasing the items from 10 suppliers. Till today, we have sold up to 71 units of items, and we have reached Rs. 6230.00 in sales to date. |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+1 row in set (0.1966 sec)
+
+--------------------------------------------------------
+  SQL > CREATE TRIGGER trg_UpdateStock_AfterSale
+                                                     -> AFTER INSERT ON BillDetail
+                                                     -> FOR EACH ROW
+                                                     -> BEGIN
+                                                     ->     UPDATE Item
+                                                     ->     SET StockQty = StockQty - NEW.SoldQty
+                                                     ->     WHERE ItemID = NEW.ItemID;
+                                                     -> END$$
+  SQL > DELIMITER ;
+ INSERT INTO BillHeader VALUES ('B434', '2021-04-24', 'C520', 'C5320');
+INSERT INTO BillDetail VALUES ('B434', 'I5234', 30);
+ SQL > SELECT ItemID, StockQty FROM Item WHERE ItemID = 'I5234';
++--------+----------+
+| ItemID | StockQty |
++--------+----------+
+| I5234  |      134 |
++--------+----------+
+
+ DELIMITER $$
+SQL > CREATE TRIGGER trg_PreventNegativeStock
+                                                     -> BEFORE INSERT ON BillDetail
+                                                     -> FOR EACH ROW
+                                                     -> BEGIN
+                                                     ->     DECLARE currentStock INT;
+                                                     ->
+                                                     ->     SELECT StockQty INTO currentStock FROM Item WHERE ItemID = NEW.ItemID;
+                                                     ->
+                                                     ->     IF currentStock < NEW.SoldQty THEN
+                                                     ->         SIGNAL SQLSTATE '45000'
+                                                     ->         SET MESSAGE_TEXT = 'Error: Not enough stock available for this sale!';
+                                                     ->     END IF;
+                                                     -> END$$
+
+ >INSERT INTO BillHeader VALUES ('B467', '2023-07-31', 'C201', 'C313');
+Query OK, 1 row affected (0.1977 sec)
+
+  > INSERT INTO BillDetail VALUES ('B467', 'I0901', 22);
+ERROR: 1644 (45000): Error: Not enough stock available for this sale!
+
+CREATE TABLE Item_AuditLog (
+                                                     ->     LogID INT AUTO_INCREMENT PRIMARY KEY,
+                                                     ->     ItemID VARCHAR(10),
+                                                     ->     OldPrice DECIMAL(10,2),
+                                                     ->     NewPrice DECIMAL(10,2),
+                                                     ->     OldStock INT,
+                                                     ->     NewStock INT,
+                                                     ->     ChangedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                                     -> );
+  SQL > DELIMITER $$
+   SQL > CREATE TRIGGER trg_ItemUpdateLog
+                                                     -> AFTER UPDATE ON Item
+                                                     -> FOR EACH ROW
+                                                     -> BEGIN
+                                                     ->     INSERT INTO Item_AuditLog (ItemID, OldPrice, NewPrice, OldStock, NewStock)
+                                                     ->     VALUES (OLD.ItemID, OLD.UnitPrice, NEW.UnitPrice, OLD.StockQty, NEW.StockQty);
+                                                     -> END$$
+ SQL > DELIMITER ;
+  SQL > UPDATE Item SET UnitPrice = UnitPrice + 5 WHERE ItemID = 'I3103';
+
+Rows matched: 1  Changed: 1  Warnings: 0
+  SQL > SELECT * FROM Item_AuditLog ORDER BY ChangedAt DESC;
++-------+--------+----------+----------+----------+----------+---------------------+
+| LogID | ItemID | OldPrice | NewPrice | OldStock | NewStock | ChangedAt           |
++-------+--------+----------+----------+----------+----------+---------------------+
+|     1 | I3103  |    10.00 |    15.00 |      230 |      230 | 2025-11-09 16:52:59 |
++-------+--------+----------+----------+----------+----------+---------------------+
+1 row in set (0.2076 sec)
+ 
