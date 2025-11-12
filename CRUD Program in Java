@@ -1,0 +1,132 @@
+import java.sql.*;
+import java.util.*;
+import java.io.*;
+import java.util.stream.Collectors;
+
+class Record {
+    private List<String> values = new ArrayList<>();
+
+    public void readRecord(List<String> fields) {
+        Scanner scanner = new Scanner(System.in);
+        values.clear();
+        for (String field : fields) {
+            System.out.print("Enter " + field + ": ");
+            String value = scanner.nextLine();
+            values.add(value);
+        }
+    }
+
+    public List<String> getList() {
+        return values;
+    }
+}
+
+class Framework
+{
+    private String menuFile;
+    private String tableName;
+    private Connection conn;
+    private List<String> fields;
+    private String pkField;
+
+    public Framework(String menuFile, String host, String user, String password, String database, String tableName) {
+        this.menuFile = menuFile;
+        this.tableName = tableName;
+
+        try {
+            //Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection(
+                "jdbc:mysql://" + host + "/" + database,
+                user,
+                password
+            );
+            fields = loadFields();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    private List<String> loadFields() throws SQLException {
+        List<String> fieldNames = new ArrayList<>();
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("DESCRIBE " + tableName);
+
+        while (rs.next()) {
+            String field = rs.getString("Field");
+            fieldNames.add(field);
+            if ("PRI".equals(rs.getString("Key"))) {
+                pkField = field;
+            }
+        }
+        return fieldNames;
+    }
+
+    public void showMenu() {
+        try {
+            List<String> menuLines = new ArrayList<>();
+            try (BufferedReader br = new BufferedReader(new FileReader(menuFile))) {
+                menuLines = br.lines().collect(Collectors.toList());
+            }
+
+            Scanner scanner = new Scanner(System.in);
+            while (true) {
+                for (String line : menuLines)
+                    System.out.println(line);
+
+                int choice = Integer.parseInt(scanner.nextLine());
+
+                switch (choice) {
+                    case 1 -> create();
+                    case 2 -> read();
+                    case 3 -> update();
+                    case 4 -> delete();
+                    case 5 -> exit();
+                    default -> System.out.println("Invalid choice.\n");
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading menu file: " + e.getMessage());
+        }
+    }
+    private void create() {
+        
+    }
+
+    private void read() {
+        
+    }
+
+
+    private void update() {
+        
+        }
+
+    private void delete() {
+        
+        }
+
+    private void exit() {
+        System.out.println("Exiting...");
+        try {
+            if (conn != null) conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        System.exit(0);
+    }
+}
+
+public class crudMysql {
+    public static void main(String[] args) {
+        Framework framework = new Framework(
+            "menu.cfg",
+            "138.68.140.83",
+            "Nlakshmi",
+            "Nlakshmi@123",
+            "dbNlakshmi_Dmart",
+            "BillHeader"
+        );
+        framework.showMenu();
+    }
+}
