@@ -1,0 +1,176 @@
+using MySql.Data.MySqlClient;
+using System;
+
+public class MySqlCrud
+{
+    private const string SERVER = "138.68.140.83";
+    private const string DATABASE = "dbNlakshmi_Dmart";
+    private const string USER = "Nlakshmi";
+    private const string PASS = "Nlakshmi@123";
+    private const string CONNECTION_STRING = "server=" + SERVER + ";user=" + USER + ";password=" + PASS + ";database=" + DATABASE + ";";
+
+    private MySqlConnection conn;
+
+    public MySqlCrud()
+    {
+        try
+        {
+            conn = new MySqlConnection(CONNECTION_STRING);
+            Console.WriteLine("Connected to database successfully!");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Database connection failed: " + e.Message);
+            Environment.Exit(1);
+        }
+    }
+
+    public void Create()
+    {
+        Console.Write("Enter Supplier ID: ");
+        string supplierId = Console.ReadLine();
+
+        Console.Write("Enter Supplier Name: ");
+        string supplierName = Console.ReadLine();
+
+        string sql = "INSERT INTO Supplier (SupplierID, SupplierName) VALUES (@id, @name)";
+
+        using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+        {
+            cmd.Parameters.AddWithValue("@id", supplierId);
+            cmd.Parameters.AddWithValue("@name", supplierName);
+
+            conn.Open();
+            cmd.ExecuteNonQuery();
+            conn.Close();
+        }
+
+        Console.WriteLine("Supplier added successfully!\n");
+    }
+
+    public void Read()
+    {
+        string sql = "SELECT SupplierID, SupplierName FROM Supplier";
+
+        using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+        {
+            conn.Open();
+            MySqlDataReader reader = cmd.ExecuteReader();
+
+            Console.WriteLine("\n--- SUPPLIER LIST ---");
+            while (reader.Read())
+            {
+                Console.WriteLine("ID: {0}, Name: {1}", reader["SupplierID"], reader["SupplierName"]);
+            }
+
+            conn.Close();
+        }
+    }
+
+    public void Update()
+    {
+        Console.Write("Enter Supplier ID to update: ");
+        string supplierId = Console.ReadLine();
+
+        Console.Write("Enter new Supplier Name: ");
+        string newName = Console.ReadLine();
+
+        string sql = "UPDATE Supplier SET SupplierName = @name WHERE SupplierID = @id";
+
+        using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+        {
+            cmd.Parameters.AddWithValue("@name", newName);
+            cmd.Parameters.AddWithValue("@id", supplierId);
+
+            conn.Open();
+            int rows = cmd.ExecuteNonQuery();
+            conn.Close();
+
+            if (rows > 0)
+                Console.WriteLine("Supplier updated successfully!\n");
+            else
+                Console.WriteLine("Supplier ID not found.\n");
+        }
+    }
+
+    public void Delete()
+    {
+        Console.Write("Enter Supplier ID to delete: ");
+        string supplierId = Console.ReadLine();
+
+        string sql = "DELETE FROM Supplier WHERE SupplierID = @id";
+
+        using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+        {
+            cmd.Parameters.AddWithValue("@id", supplierId);
+
+            conn.Open();
+            int rows = cmd.ExecuteNonQuery();
+            conn.Close();
+
+            if (rows > 0)
+                Console.WriteLine("Supplier deleted successfully!\n");
+            else
+                Console.WriteLine("Supplier ID not found.\n");
+        }
+    }
+
+    public void ShowMenu()
+    {
+        while (true)
+        {
+            Console.WriteLine("\n====== SUPPLIER DATABASE MENU ======");
+            Console.WriteLine("1. Add Supplier");
+            Console.WriteLine("2. View Suppliers");
+            Console.WriteLine("3. Update Supplier");
+            Console.WriteLine("4. Delete Supplier");
+            Console.WriteLine("5. Exit");
+            Console.WriteLine("====================================");
+            Console.Write("Enter your choice: ");
+            string choice = Console.ReadLine();
+
+            switch (choice)
+            {
+                case "1":
+                    Create();
+                    break;
+                case "2":
+                    Read();
+                    break;
+                case "3":
+                    Update();
+                    break;
+                case "4":
+                    Delete();
+                    break;
+                case "5":
+                    Exit();
+                    return;
+                default:
+                    Console.WriteLine("Invalid choice. Please enter 1–5.\n");
+                    break;
+            }
+        }
+    }
+
+    public void Exit()
+    {
+        Console.WriteLine("Exiting program...");
+        try
+        {
+            if (conn != null)
+                conn.Close();
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error closing connection: " + e.Message);
+        }
+        Console.WriteLine("Database connection closed.");
+    }
+
+    public static void Main(string[] args)
+    {
+        MySqlCrud app = new MySqlCrud();
+        app.ShowMenu();
+    }
+}
