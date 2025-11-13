@@ -1,0 +1,160 @@
+import java.sql.*;
+import java.util.*;
+
+public class MySqlCrud {
+
+    private static final String URL = "jdbc:mysql://138.68.140.83:3306/dbNlakshmi_Dmart?serverTimezone=UTC";
+    private static final String USER = "Nlakshmi";
+    private static final String PASS = "Nlakshmi@123";
+
+    private Connection conn;
+    private Scanner scanner = new Scanner(System.in);
+
+    public MySqlCrud() {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection(URL, USER, PASS);
+            System.out.println(" Connected to database successfully!");
+        } catch (Exception e) {
+            System.out.println(" Database connection failed: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+
+
+    public void create() {
+        System.out.print("Enter Supplier ID: ");
+        String supplierID = scanner.nextLine();
+
+        System.out.print("Enter Supplier Name: ");
+        String supplierName = scanner.nextLine();
+
+        String sql = "INSERT INTO Supplier (SupplierID, SupplierName) VALUES (?, ?)";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, supplierID);
+            ps.setString(2, supplierName);
+            ps.executeUpdate();
+            System.out.println(" Supplier added successfully!\n");
+        } catch (SQLException e) {
+            System.out.println(" Error adding supplier: " + e.getMessage());
+        }
+    }
+
+    
+    public void read() {
+        String sql = "SELECT SupplierID, SupplierName FROM Supplier";
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            System.out.printf("%-15s %-30s%n", "SupplierID", "SupplierName");
+            System.out.println("---------------------------------------------");
+
+            boolean found = false;
+            while (rs.next()) {
+                found = true;
+                System.out.printf("%-15s %-30s%n",
+                        rs.getString("SupplierID"),
+                        rs.getString("SupplierName"));
+            }
+
+            if (!found) {
+                System.out.println("  No suppliers found.\n");
+            } else {
+                System.out.println();
+            }
+
+        } catch (SQLException e) {
+            System.out.println(" Error reading suppliers: " + e.getMessage());
+        }
+    }
+
+    
+    public void update() {
+        System.out.print("Enter Supplier ID to update: ");
+        String supplierID = scanner.nextLine();
+
+        System.out.print("Enter new Supplier Name: ");
+        String newName = scanner.nextLine();
+
+        String sql = "UPDATE Supplier SET SupplierName = ? WHERE SupplierID = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newName);
+            ps.setString(2, supplierID);
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Supplier updated successfully!\n");
+            } else {
+                System.out.println("  Supplier ID not found.\n");
+            }
+        } catch (SQLException e) {
+            System.out.println(" Error updating supplier: " + e.getMessage());
+        }
+    }
+
+    
+    public void delete() {
+        System.out.print("Enter Supplier ID to delete: ");
+        String supplierID = scanner.nextLine();
+
+        String sql = "DELETE FROM Supplier WHERE SupplierID = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, supplierID);
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                System.out.println("  Supplier deleted successfully!\n");
+            } else {
+                System.out.println("  Supplier ID not found.\n");
+            }
+        } catch (SQLException e) {
+            System.out.println(" Error deleting supplier: " + e.getMessage());
+        }
+    }
+
+    
+    public void showMenu() {
+        while (true) {
+            System.out.println("""
+                ====== SUPPLIER DATABASE MENU ======
+                1. Add Supplier
+                2. View Suppliers
+                3. Exit
+                ====================================
+                """);
+
+            System.out.print("Enter your choice: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1" -> create();
+                case "2" -> read();
+                case "3" -> {
+                    exit();
+                    return;
+                }
+                default -> System.out.println(" Invalid choice. Please enter 1–5.\n");
+            }
+        }
+    }
+
+
+    public void exit() {
+        System.out.println(" Exiting program...");
+        try {
+            if (conn != null) conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        System.out.println(" Database connection closed.");
+    }
+
+    public static void main(String[] args) {
+        MySqlCrud app = new MySqlCrud();
+        app.showMenu();
+    }
+}
