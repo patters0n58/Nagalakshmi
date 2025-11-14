@@ -1,0 +1,64 @@
+// --- Create Calculator Layout Using JS ---
+const calc = document.createElement("div");
+calc.className = "calculator";
+
+const display = document.createElement("input");
+display.id = "display";
+display.readOnly = true;
+calc.appendChild(display);
+
+const buttons = document.createElement("div");
+buttons.className = "buttons";
+calc.appendChild(buttons);
+
+document.body.appendChild(calc);
+
+// Buttons list
+const btnValues = [
+    "7","8","9","/",
+    "4","5","6","*",
+    "1","2","3","-",
+    "0",".","+",
+];
+
+btnValues.forEach(val => {
+    const btn = document.createElement("button");
+
+    if (["/","*","-","+"].includes(val)) {
+        btn.className = "operator";
+    }
+
+    btn.textContent = val;
+    btn.onclick = () => press(val);
+    buttons.appendChild(btn);
+});
+
+// Equal and Clear Buttons
+const equal = document.createElement("button");
+equal.textContent = "=";
+equal.className = "equal";
+equal.onclick = calculate;
+buttons.appendChild(equal);
+
+const clear = document.createElement("button");
+clear.textContent = "C";
+clear.className = "clear";
+clear.onclick = clearDisplay;
+buttons.appendChild(clear);
+
+// --- Calculator Functions ---
+function press(value) {
+    display.value += value;
+}
+
+function calculate() {
+    try {
+        display.value = eval(display.value);
+    } catch {
+        display.value = "Error";
+    }
+}
+
+function clearDisplay() {
+    display.value = "";
+}
